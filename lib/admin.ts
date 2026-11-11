@@ -57,6 +57,11 @@ export type CaptionRow = {
 
 export type VoteRow = { caption_id: number; user_id: string; vote: number; created_at: string };
 
+// "1 vote", "3 votes".
+export function count(n: number, one: string, many = `${one}s`) {
+  return `${n.toLocaleString()} ${n === 1 ? one : many}`;
+}
+
 export function photoUrl(path: string) {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${PHOTO_BUCKET}/${path}`;
 }

@@ -1,4 +1,4 @@
-import { type AdminUser, displayName, formatWhen, requireAdmin } from "@/lib/admin";
+import { type AdminUser, count, displayName, formatWhen, requireAdmin } from "@/lib/admin";
 import { Shell } from "../shell";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,7 @@ export default async function UsersPage() {
   const users = (data ?? []) as AdminUser[];
 
   return (
-    <Shell email={user.email ?? ""} title="Users" lede={`${users.length} accounts. Read only.`}>
+    <Shell email={user.email ?? ""} title="Users" lede={`${count(users.length, "account")}. Read only.`}>
       {error && <p className="notice is-error">{error.message}</p>}
       <div className="table-wrap">
         <table className="table">

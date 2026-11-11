@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { type AdminUser, type VoteRow, displayName, formatWhen, requireAdmin } from "@/lib/admin";
+import { type AdminUser, type VoteRow, count, displayName, formatWhen, requireAdmin } from "@/lib/admin";
 import { Shell } from "../shell";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +23,7 @@ export default async function VotesPage() {
   const error = vRes.error ?? uRes.error;
 
   return (
-    <Shell email={user.email ?? ""} title="Votes" lede={`${votes.length} votes: ${up} up, ${votes.length - up} down. Read only, newest first.`}>
+    <Shell email={user.email ?? ""} title="Votes" lede={`${count(votes.length, "vote")}: ${up} up, ${votes.length - up} down. Read only, newest first.`}>
       {error && <p className="notice is-error">{error.message}</p>}
       {votes.length === 0 ? (
         <p className="muted">No votes yet.</p>

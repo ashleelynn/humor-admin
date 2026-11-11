@@ -6,6 +6,7 @@ import {
   type CaptionRow,
   type VoteRow,
   displayName,
+  count,
   hourLabel,
   nycDay,
   nycHour,
@@ -112,9 +113,9 @@ export default async function Overview() {
       {error && <p className="notice is-error">Some data didn’t load: {error.message}</p>}
 
       <section className="tiles" aria-label="Totals">
-        <Tile label="People signed up" value={users.length} note={`${activeUsers} have posted, dropped or voted`} />
-        <Tile label="Confessions" value={confessions.length} note={`${totalSames} “same”s given`} />
-        <Tile label="Photo drops" value={generations.length} note={`${captions.length} AI captions written`} />
+        <Tile label="People signed up" value={users.length} note={`${activeUsers} ${activeUsers === 1 ? "has" : "have"} posted, dropped or voted`} />
+        <Tile label="Confessions" value={confessions.length} note={`${count(totalSames, "“same”")} given`} />
+        <Tile label="Photo drops" value={generations.length} note={`${count(captions.length, "AI caption")} written`} />
         <Tile label="Caption votes" value={votes.length} note={upShare === null ? "No votes yet" : `${upShare}% upvotes`} />
       </section>
 

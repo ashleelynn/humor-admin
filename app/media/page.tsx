@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { moodFor } from "@/lib/confessions";
 import { THEMES, themeFor } from "@/lib/photo-booth";
-import { type AdminGeneration, type AdminUser, type CaptionRow, displayName, formatWhen, photoUrl, requireAdmin } from "@/lib/admin";
+import { type AdminGeneration, type AdminUser, type CaptionRow, count, displayName, formatWhen, photoUrl, requireAdmin } from "@/lib/admin";
 import { Shell } from "../shell";
 import { CreateForm } from "./create-form";
 
@@ -22,7 +22,7 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
   const error = gRes.error ?? cRes.error ?? uRes.error;
 
   return (
-    <Shell email={user.email ?? ""} title="AI generated media" lede={`${generations.length} photo drops and ${captions.length} Claude captions. Open one to edit or delete it.`}>
+    <Shell email={user.email ?? ""} title="AI generated media" lede={`${count(generations.length, "photo drop")} and ${count(captions.length, "Claude caption")}. Open one to edit or delete it.`}>
       {msg && <p className="notice">{msg}</p>}
       {error && <p className="notice is-error">{error.message}</p>}
 
