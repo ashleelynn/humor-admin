@@ -34,6 +34,7 @@ export async function CrudPage({ slug, searchParams }: { slug: string; searchPar
   };
   const shown = resource.fields.filter((f) => f.name !== resource.headline);
   const headline = resource.fields.find((f) => f.name === resource.headline)!;
+  const a = /^[aeiou]/i.test(resource.singular) ? "an" : "a";
 
   return (
     <Shell email={user.email ?? ""} title={resource.title} lede={resource.lede}>
@@ -41,7 +42,9 @@ export async function CrudPage({ slug, searchParams }: { slug: string; searchPar
       {(err || rowsRes.error) && <p className="notice is-error">{err ?? rowsRes.error?.message}</p>}
 
       <details className="panel add-panel" open={rows.length === 0}>
-        <summary>Add a {resource.singular}</summary>
+        <summary>
+          Add {a} {resource.singular}
+        </summary>
         <RowForm slug={slug} fields={resource.fields} options={options} submit={`Add ${resource.singular}`} />
       </details>
 
