@@ -8,6 +8,14 @@ The back office for [The Confession Booth](https://github.com/ashleelynn/Humor-P
 | **Media** (`/media`) | **Create** a drop (upload a photo and Claude writes three captions), **read** every drop with its prompt, model and uploader, **update** the theme, alt text and captions, and **delete** captions or whole drops. |
 | **Users** (`/users`) | **Read** every account: name, email, sign-in method, when they joined and last signed in, and how active they are. |
 | **Votes** (`/votes`) | **Read** every upvote and downvote: who, when, and on which caption. |
+| **Images** (`/images`) | **Create** (upload), **read**, **update** alt text and **delete** images in the booth-photos bucket. |
+| **Prompt chains** (`/prompt-chains`) | **Read** each chain and its ordered steps; **read/update** the mix (how often each chain is used). |
+| **Terms** (`/terms`) | **CRUD** the campus/city vocabulary added to prompts. |
+| **Examples** (`/examples`) | **CRUD** the few-shot AI generation examples added to prompts. |
+| **Models** / **Providers** (`/llm-models`, `/llm-providers`) | **CRUD** LLM models and providers. The booth calls the default model. |
+| **Requests** (`/requests`) | **Read** every generation request: who, which chain and model, how long, and whether it worked. |
+| **Responses** (`/llm-responses`) | **Read** exactly what the LLM sent back, with token counts and stop reason. |
+| **Signup domains** / **Whitelist** | **CRUD** allowed signup domains and whitelisted emails. A database trigger refuses new accounts outside them. |
 
 ## Who can get in
 
@@ -30,7 +38,7 @@ Sign in with Google once first (on either app), so the account and its profile r
 
 ## Setup
 
-1. In the Supabase SQL Editor, run `supabase/admin.sql`, then the `update` above with your email.
+1. In the Supabase SQL Editor, run `supabase/admin.sql`, then `supabase/llm-and-access.sql`, then the `update` above with your email.
 2. In Supabase → Authentication → URL Configuration, add these to **Redirect URLs**: `http://localhost:3001/auth/callback` and `https://<your-vercel-domain>/auth/callback`.
 3. Copy `.env.example` to `.env.local` and fill it in with the same values as the main app.
 4. `npm install`, then `npm run dev` and open http://localhost:3001.

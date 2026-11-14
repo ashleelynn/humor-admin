@@ -5,8 +5,15 @@ import { CAPTIONS_PER_DROP } from "./photo-booth";
 
 const DEFAULT_MODEL = "claude-opus-5-5";
 
-// Errors with a message that's safe to show the person who dropped the photo.
-export class BoothAIError extends Error {}
+export type LoggedResponse = { model: string; stop_reason: string | null; input_tokens: number; output_tokens: number; raw_text: string };
+
+// Errors with a message that's safe to show the person who dropped the photo. When Claude did answer,
+// `response` holds what it said, so the failure can still be logged.
+export class BoothAIError extends Error {
+  constructor(message: string, readonly response: LoggedResponse | null = null) {
+    super(message);
+  }
+}
 
 // Exactly CAPTIONS_PER_DROP captions is asked for in the prompt and checked below;
 // structured outputs don't enforce array lengths.
@@ -33,18 +40,28 @@ const RESPONSE_SCHEMA = {
 
 type ImageType = "image/jpeg" | "image/png" | "image/webp";
 
-export async function writeCaptions({ image, mimeType, prompt }: { image: ArrayBuffer; mimeType: string; prompt: string }) {
+export async function writeCaptions({
+  image,
+  mimeType,
+  prompt,
+  model: chosen,
+}: {
+  image: ArrayBuffer;
+  mimeType: string;
+  prompt: string;
+  model?: { apiModelId: string; maxTokens: number };
+}) {
   if (!process.env.ANTHROPIC_API_KEY) {
     throw new BoothAIError("The booth's AI isn't plugged in yet: ANTHROPIC_API_KEY is missing on the server.");
   }
-  const model = process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
+  const model = chosen?.apiModelId || process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
   const client = new Anthropic({ timeout: 55_000, maxRetries: 1 });
 
   let response: Anthropic.Beta.BetaMessage;
   try {
     response = await client.beta.messages.create({
       model,
-      max_tokens: 16000,
+      max_tokens: chosen?.maxTokens ?? 16000,
       // If a safety classifier declines, Anthropic retries on its recommended fallback model.
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
@@ -84,17 +101,25 @@ export async function writeCaptions({ image, mimeType, prompt }: { image: ArrayB
     throw e;
   }
 
+  const text = response.content.find((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")?.text ?? "";
+  const logged: LoggedResponse = {
+    model: response.model,
+    stop_reason: response.stop_reason,
+    input_tokens: response.usage.input_tokens,
+    output_tokens: response.usage.output_tokens,
+    raw_text: text,
+  };
+
   if (response.stop_reason === "refusal") {
-    throw new BoothAIError("The booth won't caption that one. Try a different photo.");
+    throw new BoothAIError("The booth won't caption that one. Try a different photo.", logged);
   }
 
-  const text = response.content.find((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")?.text ?? "";
   let parsed: { alt?: string; captions?: { mood?: string; text?: string }[] };
   try {
     parsed = JSON.parse(text);
   } catch {
     console.error("Claude sent back something that isn't JSON", response.stop_reason, text);
-    throw new BoothAIError("The booth's AI mumbled. Try again.");
+    throw new BoothAIError("The booth's AI mumbled. Try again.", logged);
   }
 
   const captions = (parsed.captions ?? [])
@@ -103,10 +128,10 @@ export async function writeCaptions({ image, mimeType, prompt }: { image: ArrayB
     .slice(0, CAPTIONS_PER_DROP);
   if (captions.length < CAPTIONS_PER_DROP) {
     console.error("Claude returned too few usable captions", text);
-    throw new BoothAIError("The booth's AI mumbled. Try again.");
+    throw new BoothAIError("The booth's AI mumbled. Try again.", logged);
   }
 
   const altText = (parsed.alt ?? "").replace(/\s+/g, " ").trim().slice(0, 300) || null;
   // response.model is whichever model actually answered, including a fallback.
-  return { model: response.model, altText, captions };
+  return { model: response.model, altText, captions, response: logged };
 }

@@ -148,3 +148,37 @@ main > .panel, main > section { margin-bottom: 20px; }
 summary { cursor: pointer; font-weight: 700; }
 .panel.danger { border-color: rgb(179 38 30 / .35); }
 .panel.danger .btn { justify-self: start; }
+
+/* nav groups */
+.topbar { flex-direction: column; align-items: stretch; }
+.topbar-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.nav-groups { display: flex; flex-wrap: wrap; gap: 10px 20px; }
+.nav-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.nav-group-label { font: 700 .6875rem/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.nav-group .tab { height: 30px; padding: 0 12px; font-size: .875rem; }
+
+/* generic CRUD lists */
+.add-panel summary, .crud-edit summary { font-weight: 700; }
+.add-panel[open] summary { margin-bottom: 8px; }
+.count-line { margin: 0 0 8px; }
+.crud-list { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 12px; }
+.crud-row { padding: 16px 20px; border: 1px solid var(--line); border-radius: var(--radius-card); display: grid; gap: 10px; }
+.crud-headline { font: 400 1.125rem/1.35 var(--serif); overflow-wrap: anywhere; }
+.crud-facts { display: flex; flex-wrap: wrap; gap: 6px 24px; margin: 6px 0 0; }
+.crud-facts div { display: flex; gap: 6px; min-width: 0; }
+.crud-facts dt { font-size: .8125rem; font-weight: 700; color: var(--ink-3); }
+.crud-facts dd { margin: 0; font-size: .875rem; overflow-wrap: anywhere; }
+.crud-edit { display: grid; gap: 12px; }
+.crud-edit[open] > summary { margin-bottom: 12px; }
+.crud-edit > form + form { margin-top: 12px; }
+.check { display: flex !important; align-items: center; gap: 8px; font-weight: 700; }
+.check input { width: 18px; height: 18px; }
+.field.weight { width: 100px; }
+
+/* prompt chain steps */
+.steps { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 12px; }
+.step-title { font-weight: 700; font-size: .875rem; margin-bottom: 6px; }
+
+/* images */
+.image-grid { list-style: none; margin: 20px 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.image-card img { width: 100%; height: 200px; object-fit: cover; border-radius: var(--radius-field); }

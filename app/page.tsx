@@ -21,14 +21,18 @@ type ConfessionRow = { id: number; created_at: string; body: string; mood: strin
 export default async function Overview() {
   const { supabase, user } = await requireAdmin();
 
-  const [confessionsRes, generationsRes, captionsRes, votesRes, usersRes] = await Promise.all([
+  const [confessionsRes, generationsRes, captionsRes, votesRes, usersRes, requestsRes] = await Promise.all([
     supabase.from("confessions").select("id, created_at, body, mood, same_count"),
     supabase.rpc("admin_generations"),
     supabase.from("captions").select("id, generation_id, position, created_at, mood, body, score"),
     supabase.from("caption_votes").select("caption_id, user_id, vote, created_at"),
     supabase.rpc("admin_users"),
+    supabase.from("generation_requests").select("status, duration_ms"),
   ]);
-  const error = [confessionsRes, generationsRes, captionsRes, votesRes, usersRes].find((r) => r.error)?.error;
+  const error = [confessionsRes, generationsRes, captionsRes, votesRes, usersRes, requestsRes].find((r) => r.error)?.error;
+  const requests = (requestsRes.data ?? []) as { status: string; duration_ms: number | null }[];
+  const succeeded = requests.filter((r) => r.status === "succeeded");
+  const avgSeconds = succeeded.length ? succeeded.reduce((s, r) => s + (r.duration_ms ?? 0), 0) / succeeded.length / 1000 : null;
 
   const confessions = (confessionsRes.data ?? []) as ConfessionRow[];
   const generations = (generationsRes.data ?? []) as AdminGeneration[];
@@ -117,6 +121,11 @@ export default async function Overview() {
         <Tile label="Confessions" value={confessions.length} note={`${count(totalSames, "“same”")} given`} />
         <Tile label="Photo drops" value={generations.length} note={`${count(captions.length, "AI caption")} written`} />
         <Tile label="Caption votes" value={votes.length} note={upShare === null ? "No votes yet" : `${upShare}% upvotes`} />
+        <Tile
+          label="Claude calls"
+          value={requests.length}
+          note={requests.length === 0 ? "Logged from the next drop on" : `${Math.round((succeeded.length / requests.length) * 100)}% succeeded${avgSeconds === null ? "" : `, ${avgSeconds.toFixed(1)}s avg`}`}
+        />
       </section>
 
       <section className="grid-2">

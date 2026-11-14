@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { BoothAIError, writeCaptions } from "@/lib/claude";
 import { isMood, MAX_LENGTH } from "@/lib/confessions";
-import { MAX_CONTEXT, MAX_PHOTO_BYTES, PHOTO_BUCKET, PHOTO_TYPES, captionPrompt, themeFor } from "@/lib/photo-booth";
+import { MAX_CONTEXT, MAX_PHOTO_BYTES, PHOTO_BUCKET, PHOTO_TYPES, themeFor } from "@/lib/photo-booth";
+import { buildBoothPrompt, logGenerationRequest } from "@/lib/prompt-chain";
 
 export type CreateState = { error: string | null };
 
@@ -27,15 +28,27 @@ export async function createDrop(_prev: CreateState, formData: FormData): Promis
   if (context.length > MAX_CONTEXT) return { error: `Keep the context under ${MAX_CONTEXT} characters.` };
   if (theme.length > 80) return { error: "Keep the theme under 80 characters." };
 
-  const prompt = captionPrompt({ theme, context });
+  // Same prompt chain, terms, examples and model as the booth, and logged the same way.
+  const { prompt, chainId, model } = await buildBoothPrompt(supabase, { theme, context });
+  const log = { chainId, modelId: model.id, theme, context, prompt };
+  const started = Date.now();
   let result: Awaited<ReturnType<typeof writeCaptions>>;
   try {
-    result = await writeCaptions({ image: await photo.arrayBuffer(), mimeType: photo.type, prompt });
+    result = await writeCaptions({ image: await photo.arrayBuffer(), mimeType: photo.type, prompt, model });
   } catch (e) {
-    if (e instanceof BoothAIError) return { error: e.message };
-    console.error("Writing captions failed", e);
-    return { error: "Claude tripped. Try again." };
+    const message = e instanceof BoothAIError ? e.message : "Claude tripped. Try again.";
+    if (!(e instanceof BoothAIError)) console.error("Writing captions failed", e);
+    await logGenerationRequest(supabase, {
+      ...log,
+      generationId: null,
+      status: "failed",
+      error: message,
+      durationMs: Date.now() - started,
+      response: e instanceof BoothAIError ? e.response : null,
+    });
+    return { error: message };
   }
+  const durationMs = Date.now() - started;
 
   const imagePath = `${crypto.randomUUID()}.${extension}`;
   const { error: uploadError } = await supabase.storage.from(PHOTO_BUCKET).upload(imagePath, photo, { contentType: photo.type });
@@ -52,6 +65,8 @@ export async function createDrop(_prev: CreateState, formData: FormData): Promis
     .from("captions")
     .insert(result.captions.map((c, i) => ({ generation_id: generation.id, position: i + 1, mood: c.mood, body: c.body })));
   if (captionsError) return { error: captionsError.message };
+
+  await logGenerationRequest(supabase, { ...log, generationId: generation.id, status: "succeeded", error: null, durationMs, response: result.response });
 
   revalidatePath("/media");
   redirect(`/media/${generation.id}?msg=${encodeURIComponent("Drop created.")}`);
